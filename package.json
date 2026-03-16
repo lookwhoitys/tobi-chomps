@@ -1,5 +1,5 @@
 {
-  "name": "pom-pom-snake",
+  "name": "tobi-chomps",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -10,22 +10,20 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@tailwindcss/vite": "^4.2.1",
-    "framer-motion": "^12.37.0",
-    "lucide-react": "^0.577.0",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4",
-    "tailwindcss": "^4.2.1"
+    "framer-motion": "^12.0.0",
+    "lucide-react": "^0.000.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.4",
-    "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.2.3",
+    "@eslint/js": "...",
+    "@types/react": "...",
+    "@types/react-dom": "...",
     "@vitejs/plugin-react": "^6.0.0",
-    "eslint": "^9.39.4",
-    "eslint-plugin-react-hooks": "^7.0.1",
-    "eslint-plugin-react-refresh": "^0.5.2",
-    "globals": "^17.4.0",
+    "eslint": "...",
+    "eslint-plugin-react-hooks": "...",
+    "eslint-plugin-react-refresh": "...",
+    "globals": "...",
     "vite": "^8.0.0"
   }
 }
