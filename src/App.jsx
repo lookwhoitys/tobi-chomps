@@ -4,15 +4,17 @@ import { Pause, Play, RotateCcw } from "lucide-react";
 
 const GRID_SIZE = 18;
 const CELL_IMAGE_SIZE = "142%";
+const ASSET_BASE = import.meta.env.BASE_URL;
 
 function getHeadSprite(dir) {
-  if (!dir) return "/snake-head-right.png";
-  if (dir.x === 1 && dir.y === 0) return "/snake-head-right.png";
-  if (dir.x === -1 && dir.y === 0) return "/snake-head-left.png";
-  if (dir.x === 0 && dir.y === -1) return "/snake-head-up.png";
-  if (dir.x === 0 && dir.y === 1) return "/snake-head-down.png";
-  return "/snake-head-right.png";
+  if (!dir) return `${ASSET_BASE}snake-head-right.png`;
+  if (dir.x === 1 && dir.y === 0) return `${ASSET_BASE}snake-head-right.png`;
+  if (dir.x === -1 && dir.y === 0) return `${ASSET_BASE}snake-head-left.png`;
+  if (dir.x === 0 && dir.y === -1) return `${ASSET_BASE}snake-head-up.png`;
+  if (dir.x === 0 && dir.y === 1) return `${ASSET_BASE}snake-head-down.png`;
+  return `${ASSET_BASE}snake-head-right.png`;
 }
+
 const INITIAL_SNAKE = [
   { x: 8, y: 9 },
   { x: 7, y: 9 },
@@ -60,7 +62,6 @@ function StatCard({ label, value, valueClass = "text-[#6da8c4]" }) {
   );
 }
 
-
 function FloatingCloud({ className = "", delay = 0 }) {
   return (
     <motion.div
@@ -88,11 +89,6 @@ function getDirection(from, to) {
   return { x: from.x - to.x, y: from.y - to.y };
 }
 
-function getHeadAngle(snake) {
-  if (snake.length < 2) return directionToAngle(INITIAL_DIRECTION);
-  return directionToAngle(getDirection(snake[0], snake[1]));
-}
-
 function getTailAngle(snake) {
   if (snake.length < 2) return directionToAngle({ x: -1, y: 0 });
   const last = snake[snake.length - 1];
@@ -105,8 +101,6 @@ function getBodyAngle(prev, next) {
   if (prev.x === next.x) return 90;
   return 0;
 }
-
-
 
 export default function App() {
   const [snake, setSnake] = useState(INITIAL_SNAKE);
@@ -265,12 +259,12 @@ export default function App() {
     return "empty";
   };
 
-
   const headSprite = useMemo(() => {
     if (snake.length < 2) return getHeadSprite(INITIAL_DIRECTION);
     const dir = getDirection(snake[0], snake[1]);
     return getHeadSprite(dir);
   }, [snake]);
+
   const tailAngle = useMemo(() => getTailAngle(snake), [snake]);
 
   const handleSwipeStart = (e) => {
@@ -318,11 +312,17 @@ export default function App() {
           <div className="space-y-4 p-6">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <h1 className="text-3xl font-bold tracking-tight text-[#6da8c4] lowercase whitespace-pre-line">~tobi chomps  (◕‿◕✿)</h1>
+                <h1 className="text-3xl font-bold tracking-tight text-[#6da8c4] lowercase whitespace-pre-line">
+                  ~tobi chomps  (◕‿◕✿)
+                </h1>
               </div>
               <div className="flex h-16 w-16 items-center justify-center rounded-full border border-sky-200 bg-white/90 shadow-sm">
                 <div className="relative h-12 w-12 overflow-hidden rounded-full bg-white">
-                  <img src="/snake-head-down.png" alt="tobi" className="h-full w-full object-contain" />
+                  <img
+                    src={`${ASSET_BASE}snake-head-down.png`}
+                    alt="tobi"
+                    className="h-full w-full object-contain"
+                  />
                   <div className="absolute -right-0.5 -top-0.5 text-sm">✨</div>
                   <div className="absolute left-0 bottom-0 text-xs">💗</div>
                 </div>
@@ -356,13 +356,17 @@ export default function App() {
             <div className="space-y-3 text-sm text-zinc-600">
               <div className="rounded-[24px] border border-sky-100 bg-white/90 p-4 shadow-sm">
                 <div className="mb-2 font-medium text-[#6da8c4] lowercase">how to play ✨</div>
-                <p className="lowercase">use arrow keys on desktop. on mobile, swipe the board or tap the arrow buttons</p>
+                <p className="lowercase">
+                  use arrow keys on desktop. on mobile, swipe the board or tap the arrow buttons
+                </p>
               </div>
               <div className="rounded-[24px] border border-sky-100 bg-white/90 p-4 shadow-sm">
                 <div className="mb-2 font-medium text-[#6da8c4] lowercase">goal 💗</div>
-                <p className="lowercase">help tobi grow extra fluffy by eating bones and dog food. avoid bumping into the walls or yourself! ✨💗</p>
+                <p className="lowercase">
+                  help tobi grow extra fluffy by eating bones and dog food. avoid bumping into the walls or yourself! ✨💗
+                </p>
               </div>
-              </div>
+            </div>
           </div>
         </div>
 
@@ -392,13 +396,8 @@ export default function App() {
                 <div className="absolute right-20 bottom-0 h-12 w-12 rounded-full bg-white/55" />
                 <FloatingCloud className="left-10 top-12" delay={0.2} />
                 <FloatingCloud className="right-12 top-24 scale-75" delay={1.1} />
-                
-                
-                
 
-                <div
-                  className="pointer-events-none absolute inset-0 z-10"
-                >
+                <div className="pointer-events-none absolute inset-0 z-10">
                   {pawPrints.map((print, index) => (
                     <motion.div
                       key={print.id}
@@ -430,9 +429,7 @@ export default function App() {
                           left: `calc(${burst.x} * (100% / ${GRID_SIZE}))`,
                           top: `calc(${burst.y} * (100% / ${GRID_SIZE}))`,
                         }}
-                      >
-                        
-                      </motion.div>
+                      />
                       <motion.div
                         initial={{ opacity: 0.95, scale: 0.7 }}
                         animate={{ opacity: 0, scale: 1.3, x: -12, y: -10, rotate: -15 }}
@@ -444,9 +441,7 @@ export default function App() {
                           left: `calc(${burst.x} * (100% / ${GRID_SIZE}))`,
                           top: `calc(${burst.y} * (100% / ${GRID_SIZE}))`,
                         }}
-                      >
-                        
-                      </motion.div>
+                      />
                       <motion.div
                         initial={{ opacity: 0.95, scale: 0.7 }}
                         animate={{ opacity: 0, scale: 1.3, x: 12, y: -10, rotate: 15 }}
@@ -458,9 +453,7 @@ export default function App() {
                           left: `calc(${burst.x} * (100% / ${GRID_SIZE}))`,
                           top: `calc(${burst.y} * (100% / ${GRID_SIZE}))`,
                         }}
-                      >
-                        
-                      </motion.div>
+                      />
                     </React.Fragment>
                   ))}
                 </div>
@@ -494,7 +487,11 @@ export default function App() {
                             className="absolute inset-0 flex items-center justify-center"
                             style={{ transformOrigin: "center center" }}
                           >
-                            <img src={headSprite} alt="tobi" className="h-[128%] w-[128%] object-contain drop-shadow-[0_2px_4px_rgba(255,255,255,0.35)]" />
+                            <img
+                              src={headSprite}
+                              alt="tobi"
+                              className="h-[128%] w-[128%] object-contain drop-shadow-[0_2px_4px_rgba(255,255,255,0.35)]"
+                            />
                           </motion.div>
                         </motion.div>
                       );
@@ -515,10 +512,15 @@ export default function App() {
                             className="flex items-center justify-center"
                           >
                             <motion.img
-                              src="/snake-tail.png"
+                              src={`${ASSET_BASE}snake-tail.png`}
                               alt="tail"
                               className="object-contain"
-                              style={{ width: CELL_IMAGE_SIZE, height: CELL_IMAGE_SIZE, marginLeft: "-7%", marginTop: "-7%" }}
+                              style={{
+                                width: CELL_IMAGE_SIZE,
+                                height: CELL_IMAGE_SIZE,
+                                marginLeft: "-7%",
+                                marginTop: "-7%",
+                              }}
                               animate={{ rotate: [`${tailAngle - 5}deg`, `${tailAngle + 5}deg`, `${tailAngle - 5}deg`] }}
                               transition={{ duration: 1.1, repeat: Infinity, ease: "easeInOut" }}
                             />
@@ -534,7 +536,7 @@ export default function App() {
                           className="flex items-center justify-center overflow-visible"
                         >
                           <motion.img
-                            src="/snake-body-seamless.png"
+                            src={`${ASSET_BASE}snake-body-seamless.png`}
                             alt="body"
                             className="object-contain"
                             style={{
@@ -563,7 +565,7 @@ export default function App() {
                           className="flex items-center justify-center"
                         >
                           <img
-                            src="/bone.png"
+                            src={`${ASSET_BASE}bone.png`}
                             alt="bone"
                             className="h-[102%] w-[102%] object-contain"
                           />
@@ -581,7 +583,11 @@ export default function App() {
                           animate={{ scale: 1, opacity: 1 }}
                           className="flex items-center justify-center"
                         >
-                          <img src="/food-bowl.png" alt="food" className="h-[102%] w-[102%] object-contain" />
+                          <img
+                            src={`${ASSET_BASE}food-bowl.png`}
+                            alt="food"
+                            className="h-[102%] w-[102%] object-contain"
+                          />
                         </motion.div>
                       );
                     }
@@ -600,9 +606,13 @@ export default function App() {
 
               <div className="mt-4 min-h-7 text-center text-sm text-zinc-500">
                 {isGameOver ? (
-                  <span className="font-medium text-red-400 lowercase">(• ε •) tobi bumped into something! reset and try again. 💗</span>
+                  <span className="font-medium text-red-400 lowercase">
+                    (• ε •) tobi bumped into something! reset and try again. 💗
+                  </span>
                 ) : isRunning ? (
-                  <span className="lowercase">tobi is zooming ✨ it gets a little faster every time you collect a treat 💗</span>
+                  <span className="lowercase">
+                    tobi is zooming ✨ it gets a little faster every time you collect a treat 💗
+                  </span>
                 ) : (
                   <span className="lowercase">press start for a cute little chaos run ✨💗</span>
                 )}
@@ -612,11 +622,19 @@ export default function App() {
 
           <div className="rounded-[30px] border border-white/70 bg-white/90 shadow-lg lg:hidden">
             <div className="flex flex-col items-center gap-3 p-4">
-              <button className={controlButtonClass} onClick={() => changeDirection({ x: 0, y: -1 })}>↑</button>
+              <button className={controlButtonClass} onClick={() => changeDirection({ x: 0, y: -1 })}>
+                ↑
+              </button>
               <div className="flex items-center gap-3">
-                <button className={controlButtonClass} onClick={() => changeDirection({ x: -1, y: 0 })}>←</button>
-                <button className={controlButtonClass} onClick={() => changeDirection({ x: 0, y: 1 })}>↓</button>
-                <button className={controlButtonClass} onClick={() => changeDirection({ x: 1, y: 0 })}>→</button>
+                <button className={controlButtonClass} onClick={() => changeDirection({ x: -1, y: 0 })}>
+                  ←
+                </button>
+                <button className={controlButtonClass} onClick={() => changeDirection({ x: 0, y: 1 })}>
+                  ↓
+                </button>
+                <button className={controlButtonClass} onClick={() => changeDirection({ x: 1, y: 0 })}>
+                  →
+                </button>
               </div>
             </div>
           </div>
