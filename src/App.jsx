@@ -357,7 +357,7 @@ export default function App() {
               <div className="rounded-[24px] border border-sky-100 bg-white/90 p-4 shadow-sm">
                 <div className="mb-2 font-medium text-[#6da8c4] lowercase">how to play ✨</div>
                 <p className="lowercase">
-                  use arrow keys on desktop. on mobile, swipe the board or tap the arrow buttons
+                  use arrow keys on desktop. on mobile, swipe the board or tap the arrow buttons 💗
                 </p>
               </div>
               <div className="rounded-[24px] border border-sky-100 bg-white/90 p-4 shadow-sm">
