@@ -503,7 +503,7 @@ export default function App() {
                   <img
                     src={`${ASSET_BASE}snake-head-down.png`}
                     alt="tobi"
-                    className="h-full w-full object-contain"
+                    className="h-full w-full object-cover"
                   />
                   <div className="absolute -right-0.5 -top-0.5 text-sm">✨</div>
                   <div className="absolute left-0 bottom-0 text-xs">💗</div>
