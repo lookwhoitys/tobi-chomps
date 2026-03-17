@@ -5,8 +5,8 @@ import { Pause, Play, RotateCcw } from "lucide-react";
 const GRID_SIZE = 18;
 const CELL_IMAGE_SIZE = "178%";
 const CELL_IMAGE_OFFSET = "-39%";
-const HEAD_IMAGE_SIZE = "150%";
-const HEAD_IMAGE_OFFSET = "-14%";
+const HEAD_IMAGE_SIZE = "142%";
+const HEAD_IMAGE_OFFSET = "0%";
 const TAIL_IMAGE_SIZE = "172%";
 const TAIL_IMAGE_OFFSET = "-34%";
 const ASSET_BASE = import.meta.env.BASE_URL;
@@ -695,8 +695,6 @@ export default function App() {
                               style={{
                                 width: HEAD_IMAGE_SIZE,
                                 height: HEAD_IMAGE_SIZE,
-                                marginLeft: HEAD_IMAGE_OFFSET,
-                                marginTop: HEAD_IMAGE_OFFSET,
                               }}
                             />
                           </motion.div>
