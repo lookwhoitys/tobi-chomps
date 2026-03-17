@@ -593,7 +593,7 @@ export default function App() {
             <div className="rounded-[24px] border border-sky-100 bg-white/90 p-4 shadow-sm text-sm text-zinc-600">
               <div className="mb-2 font-medium text-[#6da8c4] lowercase">goal 💗</div>
               <p className="lowercase">
-                tobi is on a never-ending snack quest!!! 🦴 eat treats, grow longer, and don’t bonk into anything! 🤭🐾
+                tobi is on a never-ending snack quest!🦴✨ eat treats, grow longer, and don’t bonk into anything!!! 🤭🐾
               </p>
             </div>
           </div>
