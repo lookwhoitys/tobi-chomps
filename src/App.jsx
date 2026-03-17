@@ -117,59 +117,90 @@ function playChompSound() {
 
     const master = ctx.createGain();
     master.gain.setValueAtTime(0.0001, now);
-    master.gain.exponentialRampToValueAtTime(0.06, now + 0.01);
-    master.gain.exponentialRampToValueAtTime(0.0001, now + 0.22);
+    master.gain.exponentialRampToValueAtTime(0.055, now + 0.01);
+    master.gain.exponentialRampToValueAtTime(0.0001, now + 0.32);
     master.connect(ctx.destination);
 
-    const osc1 = ctx.createOscillator();
-    const osc2 = ctx.createOscillator();
+    const bark1 = ctx.createOscillator();
+    const bark2 = ctx.createOscillator();
+    const bark3 = ctx.createOscillator();
+
+    bark1.type = "sawtooth";
+    bark2.type = "triangle";
+    bark3.type = "sine";
+
+    bark1.frequency.setValueAtTime(520, now);
+    bark1.frequency.exponentialRampToValueAtTime(240, now + 0.07);
+
+    bark2.frequency.setValueAtTime(760, now);
+    bark2.frequency.exponentialRampToValueAtTime(310, now + 0.06);
+
+    bark3.frequency.setValueAtTime(420, now);
+    bark3.frequency.exponentialRampToValueAtTime(180, now + 0.08);
+
+    const barkGain1 = ctx.createGain();
+    const barkGain2 = ctx.createGain();
+    const barkGain3 = ctx.createGain();
+
+    barkGain1.gain.setValueAtTime(0.001, now);
+    barkGain1.gain.exponentialRampToValueAtTime(0.045, now + 0.008);
+    barkGain1.gain.exponentialRampToValueAtTime(0.0001, now + 0.09);
+
+    barkGain2.gain.setValueAtTime(0.001, now + 0.004);
+    barkGain2.gain.exponentialRampToValueAtTime(0.03, now + 0.012);
+    barkGain2.gain.exponentialRampToValueAtTime(0.0001, now + 0.08);
+
+    barkGain3.gain.setValueAtTime(0.001, now);
+    barkGain3.gain.exponentialRampToValueAtTime(0.018, now + 0.012);
+    barkGain3.gain.exponentialRampToValueAtTime(0.0001, now + 0.11);
+
     const noise = ctx.createBufferSource();
     const noiseGain = ctx.createGain();
     const filter = ctx.createBiquadFilter();
 
-    osc1.type = "triangle";
-    osc2.type = "sine";
-
-    osc1.frequency.setValueAtTime(220, now);
-    osc1.frequency.exponentialRampToValueAtTime(140, now + 0.08);
-
-    osc2.frequency.setValueAtTime(330, now);
-    osc2.frequency.exponentialRampToValueAtTime(190, now + 0.07);
-
-    const bufferSize = ctx.sampleRate * 0.12;
+    const bufferSize = Math.floor(ctx.sampleRate * 0.12);
     const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
     const data = buffer.getChannelData(0);
+
     for (let i = 0; i < bufferSize; i += 1) {
-      data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
+      const envelope = 1 - i / bufferSize;
+      data[i] = (Math.random() * 2 - 1) * envelope * 0.7;
     }
 
     noise.buffer = buffer;
-
-    filter.type = "lowpass";
+    filter.type = "bandpass";
     filter.frequency.setValueAtTime(900, now);
     filter.Q.setValueAtTime(0.7, now);
 
     noiseGain.gain.setValueAtTime(0.001, now);
-    noiseGain.gain.exponentialRampToValueAtTime(0.035, now + 0.005);
-    noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.09);
+    noiseGain.gain.exponentialRampToValueAtTime(0.012, now + 0.005);
+    noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.06);
 
-    osc1.connect(master);
-    osc2.connect(master);
+    bark1.connect(barkGain1);
+    bark2.connect(barkGain2);
+    bark3.connect(barkGain3);
+
+    barkGain1.connect(master);
+    barkGain2.connect(master);
+    barkGain3.connect(master);
+
     noise.connect(filter);
     filter.connect(noiseGain);
     noiseGain.connect(master);
 
-    osc1.start(now);
-    osc2.start(now + 0.01);
+    bark1.start(now);
+    bark2.start(now + 0.002);
+    bark3.start(now);
     noise.start(now);
 
-    osc1.stop(now + 0.12);
-    osc2.stop(now + 0.1);
-    noise.stop(now + 0.09);
+    bark1.stop(now + 0.1);
+    bark2.stop(now + 0.09);
+    bark3.stop(now + 0.11);
+    noise.stop(now + 0.06);
 
     window.setTimeout(() => {
       ctx.close().catch(() => {});
-    }, 300);
+    }, 400);
   } catch {
     // ignore sound errors
   }
@@ -417,15 +448,12 @@ export default function App() {
     mass: 0.8,
   };
 
-  const controlButtonClass =
-    "h-14 w-14 rounded-[20px] border border-sky-200/80 bg-white/80 text-lg text-[#6da8c4] shadow-md transition hover:bg-white active:scale-[0.98]";
-
   return (
-    <div className="min-h-screen bg-[#7EA3CC] p-4 text-zinc-800 sm:p-6">
-      <div className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[380px_1fr]">
+    <div className="min-h-screen bg-[#7EA3CC] p-3 text-zinc-800 sm:p-6">
+      <div className="mx-auto grid max-w-6xl gap-4 lg:grid-cols-[380px_1fr] lg:gap-6">
         <div className="overflow-hidden rounded-[32px] border border-white/70 bg-white/80 shadow-[0_20px_80px_rgba(160,210,255,0.35)] backdrop-blur">
           <div className="h-3 bg-[linear-gradient(90deg,#cdeeff,#d9f3ff,#e8f8ff,#dff4ff)]" />
-          <div className="space-y-4 p-6">
+          <div className="space-y-4 p-5 sm:p-6">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <h1 className="text-3xl font-bold tracking-tight text-[#6da8c4] lowercase whitespace-pre-line">
@@ -476,29 +504,21 @@ export default function App() {
               </IconButton>
             </div>
 
-            <div className="space-y-3 text-sm text-zinc-600">
-              <div className="rounded-[24px] border border-sky-100 bg-white/90 p-4 shadow-sm">
-                <div className="mb-2 font-medium text-[#6da8c4] lowercase">how to play ✨</div>
-                <p className="lowercase">
-                  use arrow keys on desktop. on mobile, swipe the board or tap the arrow buttons
-                </p>
-              </div>
-              <div className="rounded-[24px] border border-sky-100 bg-white/90 p-4 shadow-sm">
-                <div className="mb-2 font-medium text-[#6da8c4] lowercase">goal 💗</div>
-                <p className="lowercase">
-                  help tobi grow extra fluffy by eating bones and dog food. avoid bumping into the walls or yourself! ✨💗
-                </p>
-              </div>
+            <div className="rounded-[24px] border border-sky-100 bg-white/90 p-4 shadow-sm text-sm text-zinc-600">
+              <div className="mb-2 font-medium text-[#6da8c4] lowercase">goal 💗</div>
+              <p className="lowercase">
+                help tobi grow extra fluffy by eating bones and dog food. avoid bumping into the walls or yourself! ✨💗
+              </p>
             </div>
           </div>
         </div>
 
         <div className="space-y-5">
           <div className="overflow-hidden rounded-[32px] border border-white/70 bg-white/80 shadow-[0_20px_80px_rgba(160,210,255,0.25)] backdrop-blur">
-            <div className="p-4 sm:p-6">
+            <div className="p-2 sm:p-6">
               <div
                 ref={boardRef}
-                className="relative mx-auto aspect-square w-full max-w-none select-none overflow-hidden rounded-[42px] border-[4px] border-white bg-[#BEBEBE] p-4 shadow-[inset_0_0_0_1px_rgba(180,220,255,0.55),0_20px_40px_rgba(255,255,255,0.25)] touch-none md:max-w-[640px] sm:p-5"
+                className="relative mx-auto min-h-[78svh] w-full max-w-none select-none overflow-hidden rounded-[34px] border-[4px] border-white bg-[#BEBEBE] p-3 shadow-[inset_0_0_0_1px_rgba(180,220,255,0.55),0_20px_40px_rgba(255,255,255,0.25)] touch-none sm:aspect-square sm:min-h-0 sm:max-w-[640px] sm:rounded-[42px] sm:p-5"
                 onTouchStart={handleSwipeStart}
                 onTouchEnd={handleSwipeEnd}
               >
@@ -606,7 +626,7 @@ export default function App() {
                           className="relative z-20 overflow-visible rounded-[10px]"
                         >
                           <motion.div
-                            animate={chomping ? { y: [0, -1, 0], scale: [1, 0.9, 1.06, 1] } : { y: [0, -1.5, 0] }}
+                            animate={chomping ? { y: [0, -1, 0], scale: [1, 0.92, 1.05, 1] } : { y: [0, -1.5, 0] }}
                             transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
                             className="absolute inset-0 flex items-center justify-center"
                             style={{ transformOrigin: "center center" }}
@@ -728,7 +748,7 @@ export default function App() {
                 </div>
               </div>
 
-              <div className="mt-4 min-h-7 text-center text-sm text-zinc-500">
+              <div className="mt-4 min-h-7 px-2 text-center text-sm text-zinc-500">
                 {isGameOver ? (
                   <span className="font-medium text-red-400 lowercase">
                     (• ε •) tobi bumped into something! swipe or press space to try again. 💗
@@ -740,25 +760,6 @@ export default function App() {
                 ) : (
                   <span className="lowercase">press start, swipe, or hit space for a cute little chaos run ✨💗</span>
                 )}
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-[30px] border border-white/70 bg-white/90 shadow-lg lg:hidden">
-            <div className="flex flex-col items-center gap-3 p-4">
-              <button className={controlButtonClass} onClick={() => changeDirection({ x: 0, y: -1 })}>
-                ↑
-              </button>
-              <div className="flex items-center gap-3">
-                <button className={controlButtonClass} onClick={() => changeDirection({ x: -1, y: 0 })}>
-                  ←
-                </button>
-                <button className={controlButtonClass} onClick={() => changeDirection({ x: 0, y: 1 })}>
-                  ↓
-                </button>
-                <button className={controlButtonClass} onClick={() => changeDirection({ x: 1, y: 0 })}>
-                  →
-                </button>
               </div>
             </div>
           </div>
