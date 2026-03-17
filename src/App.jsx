@@ -495,7 +495,7 @@ export default function App() {
               <div className="flex h-16 w-16 items-center justify-center rounded-full border border-sky-200 bg-white/90 shadow-sm">
                 <div className="relative h-12 w-12 overflow-hidden rounded-full bg-white">
                   <img
-                    src={`${ASSET_BASE}snake-head-down.png`}
+                    src={`${ASSET_BASE}snake-head.png`}
                     alt="tobi"
                     className="h-full w-full object-cover"
                   />
@@ -593,7 +593,7 @@ export default function App() {
             <div className="rounded-[24px] border border-sky-100 bg-white/90 p-4 shadow-sm text-sm text-zinc-600">
               <div className="mb-2 font-medium text-[#6da8c4] lowercase">goal 💗</div>
               <p className="lowercase">
-                help tobi grow extra fluffy by eating bones and dog food. avoid bumping into the walls or yourself! ✨💗
+                tobi is on a never-ending snack quest!!! eat treats, grow longer, and don’t bonk into anything! 💗🐾
               </p>
             </div>
           </div>
