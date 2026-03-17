@@ -115,35 +115,61 @@ function playChompSound() {
     const ctx = new AudioContextClass();
     const now = ctx.currentTime;
 
+    const master = ctx.createGain();
+    master.gain.setValueAtTime(0.0001, now);
+    master.gain.exponentialRampToValueAtTime(0.06, now + 0.01);
+    master.gain.exponentialRampToValueAtTime(0.0001, now + 0.22);
+    master.connect(ctx.destination);
+
     const osc1 = ctx.createOscillator();
     const osc2 = ctx.createOscillator();
-    const gain = ctx.createGain();
+    const noise = ctx.createBufferSource();
+    const noiseGain = ctx.createGain();
+    const filter = ctx.createBiquadFilter();
 
     osc1.type = "triangle";
-    osc2.type = "square";
+    osc2.type = "sine";
 
-    osc1.frequency.setValueAtTime(520, now);
-    osc1.frequency.exponentialRampToValueAtTime(220, now + 0.08);
+    osc1.frequency.setValueAtTime(220, now);
+    osc1.frequency.exponentialRampToValueAtTime(140, now + 0.08);
 
-    osc2.frequency.setValueAtTime(760, now);
-    osc2.frequency.exponentialRampToValueAtTime(320, now + 0.08);
+    osc2.frequency.setValueAtTime(330, now);
+    osc2.frequency.exponentialRampToValueAtTime(190, now + 0.07);
 
-    gain.gain.setValueAtTime(0.0001, now);
-    gain.gain.exponentialRampToValueAtTime(0.08, now + 0.01);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.12);
+    const bufferSize = ctx.sampleRate * 0.12;
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i += 1) {
+      data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
+    }
 
-    osc1.connect(gain);
-    osc2.connect(gain);
-    gain.connect(ctx.destination);
+    noise.buffer = buffer;
+
+    filter.type = "lowpass";
+    filter.frequency.setValueAtTime(900, now);
+    filter.Q.setValueAtTime(0.7, now);
+
+    noiseGain.gain.setValueAtTime(0.001, now);
+    noiseGain.gain.exponentialRampToValueAtTime(0.035, now + 0.005);
+    noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.09);
+
+    osc1.connect(master);
+    osc2.connect(master);
+    noise.connect(filter);
+    filter.connect(noiseGain);
+    noiseGain.connect(master);
 
     osc1.start(now);
-    osc2.start(now);
+    osc2.start(now + 0.01);
+    noise.start(now);
+
     osc1.stop(now + 0.12);
-    osc2.stop(now + 0.12);
+    osc2.stop(now + 0.1);
+    noise.stop(now + 0.09);
 
     window.setTimeout(() => {
       ctx.close().catch(() => {});
-    }, 180);
+    }, 300);
   } catch {
     // ignore sound errors
   }
