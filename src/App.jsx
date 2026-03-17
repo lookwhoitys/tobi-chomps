@@ -554,7 +554,7 @@ export default function App() {
             <div className="rounded-[24px] border border-sky-100 bg-white/90 p-4 shadow-sm text-sm text-zinc-600">
               <div className="mb-2 font-medium text-[#6da8c4] lowercase">goal 💗</div>
               <p className="lowercase">
-                help tobi grow extra fluffy by eating bones and dog food. avoid bumping into the walls or yourself! ✨💗
+                help tobi gather yummy bones and dog food! be careful not to bonk the walls or your own tail! 🐾✨
               </p>
             </div>
           </div>
