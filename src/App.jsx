@@ -220,6 +220,7 @@ export default function App() {
   const [eatBursts, setEatBursts] = useState([]);
   const [chomping, setChomping] = useState(false);
   const [justAte, setJustAte] = useState(false);
+  const [isMobilePlaying, setIsMobilePlaying] = useState(false);
   const boardRef = useRef(null);
 
   const enterFullscreenIfMobile = useCallback(() => {
@@ -246,6 +247,10 @@ export default function App() {
     setJustAte(false);
     setChomping(false);
     setIsRunning(true);
+
+    if (isMobileDevice()) {
+      setIsMobilePlaying(true);
+    }
   }, []);
 
   useEffect(() => {
@@ -256,6 +261,32 @@ export default function App() {
   useEffect(() => {
     window.localStorage.setItem("pom-pom-snake-high-score", String(highScore));
   }, [highScore]);
+
+  useEffect(() => {
+    if (!isMobilePlaying) return;
+    if (!boardRef.current) return;
+
+    boardRef.current.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  }, [isMobilePlaying]);
+
+  useEffect(() => {
+    if (!isMobileDevice()) return;
+
+    const originalOverflow = document.body.style.overflow;
+
+    if (isMobilePlaying) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = originalOverflow;
+    }
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, [isMobilePlaying]);
 
   const createPawPrint = useCallback((segment) => {
     const id = `${Date.now()}-${Math.random()}`;
@@ -289,6 +320,7 @@ export default function App() {
     setEatBursts([]);
     setJustAte(false);
     setChomping(false);
+    setIsMobilePlaying(false);
   }, []);
 
   const speed = useMemo(() => Math.max(MIN_SPEED, BASE_SPEED - score * 5), [score]);
@@ -355,6 +387,11 @@ export default function App() {
           setIsGameOver(true);
           setIsRunning(false);
           setHighScore((prev) => Math.max(prev, score));
+
+          if (isMobileDevice()) {
+            setIsMobilePlaying(true);
+          }
+
           return currentSnake;
         }
 
@@ -451,7 +488,11 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#7EA3CC] p-3 text-zinc-800 sm:p-6">
       <div className="mx-auto grid max-w-6xl gap-4 lg:grid-cols-[380px_1fr] lg:gap-6">
-        <div className="overflow-hidden rounded-[32px] border border-white/70 bg-white/80 shadow-[0_20px_80px_rgba(160,210,255,0.35)] backdrop-blur">
+        <div
+          className={`overflow-hidden rounded-[32px] border border-white/70 bg-white/80 shadow-[0_20px_80px_rgba(160,210,255,0.35)] backdrop-blur ${
+            isMobilePlaying ? "hidden lg:block" : ""
+          }`}
+        >
           <div className="h-3 bg-[linear-gradient(90deg,#cdeeff,#d9f3ff,#e8f8ff,#dff4ff)]" />
           <div className="space-y-4 p-5 sm:p-6">
             <div className="flex items-start justify-between gap-3">
@@ -482,11 +523,19 @@ export default function App() {
               <IconButton
                 onClick={() => {
                   enterFullscreenIfMobile();
+
                   if (isGameOver) {
                     startFreshGame(nextDirectionRef.current || INITIAL_DIRECTION);
                     return;
                   }
-                  setIsRunning((prev) => !prev);
+
+                  setIsRunning((prev) => {
+                    const next = !prev;
+                    if (isMobileDevice()) {
+                      setIsMobilePlaying(next);
+                    }
+                    return next;
+                  });
                 }}
                 className="border-sky-400 bg-[#bbe0f2] text-white shadow-md hover:bg-[#a9d6ea]"
                 title="start or pause"
@@ -518,7 +567,11 @@ export default function App() {
             <div className="p-2 sm:p-6">
               <div
                 ref={boardRef}
-                className="relative mx-auto min-h-[78svh] w-full max-w-none select-none overflow-hidden rounded-[34px] border-[4px] border-white bg-[#BEBEBE] p-3 shadow-[inset_0_0_0_1px_rgba(180,220,255,0.55),0_20px_40px_rgba(255,255,255,0.25)] touch-none sm:aspect-square sm:min-h-0 sm:max-w-[640px] sm:rounded-[42px] sm:p-5"
+                className={`relative mx-auto w-full select-none overflow-hidden border-[4px] border-white bg-[#BEBEBE] shadow-[inset_0_0_0_1px_rgba(180,220,255,0.55),0_20px_40px_rgba(255,255,255,0.25)] touch-none ${
+                  isMobilePlaying
+                    ? "h-[100svh] rounded-none border-x-0 border-y-0 p-2"
+                    : "h-[82svh] rounded-[34px] p-3 sm:aspect-square sm:h-auto sm:max-w-[640px] sm:rounded-[42px] sm:p-5"
+                }`}
                 onTouchStart={handleSwipeStart}
                 onTouchEnd={handleSwipeEnd}
               >
@@ -748,7 +801,11 @@ export default function App() {
                 </div>
               </div>
 
-              <div className="mt-4 min-h-7 px-2 text-center text-sm text-zinc-500">
+              <div
+                className={`mt-4 min-h-7 px-2 text-center text-sm text-zinc-500 ${
+                  isMobilePlaying && isRunning ? "hidden sm:block" : ""
+                }`}
+              >
                 {isGameOver ? (
                   <span className="font-medium text-red-400 lowercase">
                     (• ε •) tobi bumped into something! swipe or press space to try again. 💗
