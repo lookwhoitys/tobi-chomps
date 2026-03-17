@@ -814,8 +814,8 @@ export default function App() {
                             alt="bone"
                             className="object-contain drop-shadow-[0_6px_10px_rgba(255,240,200,0.38)]"
                             style={{
-                              width: "138%",
-                              height: "138%",
+                              width: "148%",
+                              height: "148%",
                               transformOrigin: "center center",
                             }}
                             animate={{
@@ -882,8 +882,8 @@ export default function App() {
                             alt="food"
                             className="object-contain drop-shadow-[0_6px_10px_rgba(255,235,210,0.34)]"
                             style={{
-                              width: "134%",
-                              height: "134%",
+                              width: "144%",
+                              height: "144%",
                               transformOrigin: "center center",
                             }}
                             animate={{
