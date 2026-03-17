@@ -787,15 +787,65 @@ export default function App() {
                           key={index}
                           layout
                           transition={itemSpring}
-                          initial={{ scale: 0.75, opacity: 0 }}
-                          animate={{ scale: [0.96, 1.06, 0.96], opacity: 1 }}
-                          className="flex items-center justify-center"
+                          initial={{ scale: 0.82, opacity: 0 }}
+                          animate={{
+                            opacity: 1,
+                            y: [0, -2.5, 0],
+                          }}
+                          className="relative flex items-center justify-center overflow-visible"
                         >
-                          <img
+                          <motion.div
+                            animate={{
+                              scale: [1, 1.1, 1],
+                              rotate: [-2, 2, -2],
+                            }}
+                            transition={{
+                              duration: 1.8,
+                              repeat: Infinity,
+                              ease: "easeInOut",
+                            }}
+                            className="absolute inset-0 flex items-center justify-center"
+                          >
+                            <div className="h-[62%] w-[62%] rounded-full bg-white/35 blur-md" />
+                          </motion.div>
+
+                          <motion.img
                             src={`${ASSET_BASE}bone.png`}
                             alt="bone"
-                            className="h-[102%] w-[102%] object-contain"
+                            className="object-contain drop-shadow-[0_6px_10px_rgba(255,240,200,0.38)]"
+                            style={{
+                              width: "138%",
+                              height: "138%",
+                              transformOrigin: "center center",
+                            }}
+                            animate={{
+                              scale: [1, 1.08, 1],
+                              y: [0, -2.5, 0],
+                              rotate: [-3, 3, -3],
+                            }}
+                            transition={{
+                              duration: 1.8,
+                              repeat: Infinity,
+                              ease: "easeInOut",
+                            }}
                           />
+
+                          <motion.div
+                            className="pointer-events-none absolute -top-[10%] right-[6%] text-[11px]"
+                            animate={{
+                              opacity: [0.35, 0.95, 0.35],
+                              scale: [0.85, 1.12, 0.85],
+                              y: [0, -3, 0],
+                            }}
+                            transition={{
+                              duration: 1.5,
+                              repeat: Infinity,
+                              ease: "easeInOut",
+                              delay: 0.15,
+                            }}
+                          >
+                            ✨
+                          </motion.div>
                         </motion.div>
                       );
                     }
@@ -806,15 +856,64 @@ export default function App() {
                           key={index}
                           layout
                           transition={itemSpring}
-                          initial={{ scale: 0.8, opacity: 0 }}
-                          animate={{ scale: 1, opacity: 1 }}
-                          className="flex items-center justify-center"
+                          initial={{ scale: 0.84, opacity: 0 }}
+                          animate={{
+                            opacity: 1,
+                            y: [0, -2, 0],
+                          }}
+                          className="relative flex items-center justify-center overflow-visible"
                         >
-                          <img
+                          <motion.div
+                            animate={{
+                              scale: [1, 1.08, 1],
+                            }}
+                            transition={{
+                              duration: 1.9,
+                              repeat: Infinity,
+                              ease: "easeInOut",
+                            }}
+                            className="absolute inset-0 flex items-center justify-center"
+                          >
+                            <div className="h-[66%] w-[66%] rounded-full bg-white/28 blur-md" />
+                          </motion.div>
+
+                          <motion.img
                             src={`${ASSET_BASE}food-bowl.png`}
                             alt="food"
-                            className="h-[102%] w-[102%] object-contain"
+                            className="object-contain drop-shadow-[0_6px_10px_rgba(255,235,210,0.34)]"
+                            style={{
+                              width: "134%",
+                              height: "134%",
+                              transformOrigin: "center center",
+                            }}
+                            animate={{
+                              scale: [1, 1.06, 1],
+                              y: [0, -2, 0],
+                              rotate: [-1.5, 1.5, -1.5],
+                            }}
+                            transition={{
+                              duration: 1.9,
+                              repeat: Infinity,
+                              ease: "easeInOut",
+                            }}
                           />
+
+                          <motion.div
+                            className="pointer-events-none absolute -top-[8%] left-[8%] text-[10px]"
+                            animate={{
+                              opacity: [0.25, 0.8, 0.25],
+                              scale: [0.85, 1.08, 0.85],
+                              y: [0, -2.5, 0],
+                            }}
+                            transition={{
+                              duration: 1.6,
+                              repeat: Infinity,
+                              ease: "easeInOut",
+                              delay: 0.25,
+                            }}
+                          >
+                            ✨
+                          </motion.div>
                         </motion.div>
                       );
                     }
