@@ -1,11 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { Pause, Play, RotateCcw } from "lucide-react";
+import { Pause, Play, RotateCcw, Volume2, VolumeX } from "lucide-react";
 
 const GRID_SIZE = 18;
 const ASSET_BASE = import.meta.env.BASE_URL;
-
-let sharedAudioContext = null;
 
 const INITIAL_SNAKE = [
   { x: 8, y: 9 },
@@ -15,21 +13,6 @@ const INITIAL_SNAKE = [
 const INITIAL_DIRECTION = { x: 1, y: 0 };
 const BASE_SPEED = 150;
 const MIN_SPEED = 68;
-
-function getAudioContext() {
-  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-  if (!AudioContextClass) return null;
-
-  if (!sharedAudioContext) {
-    sharedAudioContext = new AudioContextClass();
-  }
-
-  if (sharedAudioContext.state === "suspended") {
-    sharedAudioContext.resume().catch(() => {});
-  }
-
-  return sharedAudioContext;
-}
 
 function getHeadSprite(dir) {
   if (!dir) return `${ASSET_BASE}snake-head-right.png`;
@@ -122,85 +105,6 @@ function isMobileDevice() {
   return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
 }
 
-function playChompSound() {
-  try {
-    const ctx = getAudioContext();
-    if (!ctx) return;
-
-    const now = ctx.currentTime;
-
-    const master = ctx.createGain();
-    master.gain.setValueAtTime(0.0001, now);
-    master.gain.exponentialRampToValueAtTime(0.12, now + 0.01);
-    master.gain.exponentialRampToValueAtTime(0.0001, now + 0.28);
-    master.connect(ctx.destination);
-
-    const barkMain = ctx.createOscillator();
-    const barkBody = ctx.createOscillator();
-    const barkAir = ctx.createBufferSource();
-
-    barkMain.type = "sawtooth";
-    barkBody.type = "triangle";
-
-    barkMain.frequency.setValueAtTime(680, now);
-    barkMain.frequency.exponentialRampToValueAtTime(260, now + 0.06);
-
-    barkBody.frequency.setValueAtTime(420, now);
-    barkBody.frequency.exponentialRampToValueAtTime(170, now + 0.08);
-
-    const mainGain = ctx.createGain();
-    const bodyGain = ctx.createGain();
-
-    mainGain.gain.setValueAtTime(0.001, now);
-    mainGain.gain.exponentialRampToValueAtTime(0.08, now + 0.008);
-    mainGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.09);
-
-    bodyGain.gain.setValueAtTime(0.001, now);
-    bodyGain.gain.exponentialRampToValueAtTime(0.05, now + 0.012);
-    bodyGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.11);
-
-    const noiseLength = Math.floor(ctx.sampleRate * 0.08);
-    const noiseBuffer = ctx.createBuffer(1, noiseLength, ctx.sampleRate);
-    const data = noiseBuffer.getChannelData(0);
-
-    for (let i = 0; i < noiseLength; i += 1) {
-      const env = 1 - i / noiseLength;
-      data[i] = (Math.random() * 2 - 1) * env;
-    }
-
-    barkAir.buffer = noiseBuffer;
-
-    const noiseFilter = ctx.createBiquadFilter();
-    noiseFilter.type = "bandpass";
-    noiseFilter.frequency.setValueAtTime(1200, now);
-    noiseFilter.Q.setValueAtTime(0.8, now);
-
-    const noiseGain = ctx.createGain();
-    noiseGain.gain.setValueAtTime(0.001, now);
-    noiseGain.gain.exponentialRampToValueAtTime(0.02, now + 0.004);
-    noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.05);
-
-    barkMain.connect(mainGain);
-    barkBody.connect(bodyGain);
-    mainGain.connect(master);
-    bodyGain.connect(master);
-
-    barkAir.connect(noiseFilter);
-    noiseFilter.connect(noiseGain);
-    noiseGain.connect(master);
-
-    barkMain.start(now);
-    barkBody.start(now + 0.002);
-    barkAir.start(now);
-
-    barkMain.stop(now + 0.1);
-    barkBody.stop(now + 0.12);
-    barkAir.stop(now + 0.05);
-  } catch {
-    // ignore sound errors
-  }
-}
-
 export default function App() {
   const [snake, setSnake] = useState(INITIAL_SNAKE);
   const [direction, setDirection] = useState(INITIAL_DIRECTION);
@@ -216,7 +120,14 @@ export default function App() {
   const [chomping, setChomping] = useState(false);
   const [justAte, setJustAte] = useState(false);
   const [isMobilePlaying, setIsMobilePlaying] = useState(false);
+
+  const [musicEnabled, setMusicEnabled] = useState(false);
+  const [musicVolume, setMusicVolume] = useState(0.35);
+  const [soundEnabled, setSoundEnabled] = useState(true);
+
   const boardRef = useRef(null);
+  const musicRef = useRef(null);
+  const barkRef = useRef(null);
 
   const enterFullscreenIfMobile = useCallback(() => {
     if (!isMobileDevice()) return;
@@ -228,6 +139,30 @@ export default function App() {
       el.requestFullscreen().catch(() => {});
     }
   }, []);
+
+  const enableMusicIfAllowed = useCallback(() => {
+    if (!musicEnabled) return;
+    const music = musicRef.current;
+    if (!music) return;
+
+    music.volume = musicVolume;
+    music.play().catch(() => {});
+  }, [musicEnabled, musicVolume]);
+
+  const playBarkSound = useCallback(() => {
+    if (!soundEnabled) return;
+    const bark = barkRef.current;
+    if (!bark) return;
+
+    try {
+      bark.pause();
+      bark.currentTime = 0;
+      bark.volume = 0.95;
+      bark.play().catch(() => {});
+    } catch {
+      // ignore sound errors
+    }
+  }, [soundEnabled]);
 
   const startFreshGame = useCallback((newDir = INITIAL_DIRECTION) => {
     const freshSnake = INITIAL_SNAKE;
@@ -282,6 +217,19 @@ export default function App() {
       document.body.style.overflow = originalOverflow;
     };
   }, [isMobilePlaying]);
+
+  useEffect(() => {
+    const music = musicRef.current;
+    if (!music) return;
+
+    music.volume = musicVolume;
+
+    if (musicEnabled) {
+      music.play().catch(() => {});
+    } else {
+      music.pause();
+    }
+  }, [musicEnabled, musicVolume]);
 
   const createPawPrint = useCallback((segment) => {
     const id = `${Date.now()}-${Math.random()}`;
@@ -339,7 +287,8 @@ export default function App() {
       if (e.key === "ArrowRight") changeDirection({ x: 1, y: 0 });
 
       if (e.key === " ") {
-        getAudioContext();
+        enableMusicIfAllowed();
+
         if (isGameOver) {
           startFreshGame(nextDirectionRef.current || INITIAL_DIRECTION);
           return;
@@ -353,7 +302,7 @@ export default function App() {
 
     window.addEventListener("keydown", handleKeyDown, { passive: false });
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [changeDirection, isGameOver, isRunning, startFreshGame]);
+  }, [changeDirection, enableMusicIfAllowed, isGameOver, isRunning, startFreshGame]);
 
   useEffect(() => {
     if (!isRunning || isGameOver) return;
@@ -400,7 +349,7 @@ export default function App() {
           setScore(nextScore);
           setHighScore((prev) => Math.max(prev, nextScore));
           createEatBurst(food);
-          playChompSound();
+          playBarkSound();
           setFood(randomFoodPosition(nextSnake));
           return nextSnake;
         }
@@ -411,7 +360,7 @@ export default function App() {
     }, speed);
 
     return () => clearInterval(interval);
-  }, [createEatBurst, createPawPrint, food, isGameOver, isRunning, score, speed]);
+  }, [createEatBurst, createPawPrint, food, isGameOver, isRunning, playBarkSound, score, speed]);
 
   const snakeMap = useMemo(() => {
     const map = new Map();
@@ -440,7 +389,7 @@ export default function App() {
   const tailAngle = useMemo(() => getTailAngle(snake), [snake]);
 
   const handleSwipeStart = (e) => {
-    getAudioContext();
+    enableMusicIfAllowed();
     enterFullscreenIfMobile();
     const touch = e.touches[0];
     setTouchStart({ x: touch.clientX, y: touch.clientY });
@@ -484,6 +433,14 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#7EA3CC] p-3 text-zinc-800 sm:p-6">
+      <audio ref={musicRef} loop preload="auto">
+        <source src={`${ASSET_BASE}bg-music.mp3`} type="audio/mpeg" />
+      </audio>
+
+      <audio ref={barkRef} preload="auto">
+        <source src={`${ASSET_BASE}bark.mp3`} type="audio/mpeg" />
+      </audio>
+
       <div className="mx-auto grid max-w-6xl gap-4 lg:grid-cols-[380px_1fr] lg:gap-6">
         <div
           className={`overflow-hidden rounded-[32px] border border-white/70 bg-white/80 shadow-[0_20px_80px_rgba(160,210,255,0.35)] backdrop-blur ${
@@ -501,7 +458,7 @@ export default function App() {
               <div className="flex h-16 w-16 items-center justify-center rounded-full border border-sky-200 bg-white/90 shadow-sm">
                 <div className="relative h-12 w-12 overflow-hidden rounded-full bg-white">
                   <img
-                    src={`${ASSET_BASE}snake-head.png`}
+                    src={`${ASSET_BASE}snake-head-down.png`}
                     alt="tobi"
                     className="h-full w-full object-cover"
                   />
@@ -519,7 +476,7 @@ export default function App() {
             <div className="flex flex-wrap gap-3">
               <IconButton
                 onClick={() => {
-                  getAudioContext();
+                  enableMusicIfAllowed();
                   enterFullscreenIfMobile();
 
                   if (isGameOver) {
@@ -541,6 +498,7 @@ export default function App() {
                 {isRunning ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
                 {isRunning ? "pause 💗" : "start ✨"}
               </IconButton>
+
               <IconButton
                 onClick={resetGame}
                 className="border-sky-200 bg-white text-[#6da8c4] shadow-sm hover:bg-sky-50"
@@ -549,12 +507,56 @@ export default function App() {
                 <RotateCcw className="h-4 w-4" />
                 reset 💗
               </IconButton>
+
+              <IconButton
+                onClick={() => {
+                  setMusicEnabled((prev) => !prev);
+                }}
+                className="border-sky-200 bg-white text-[#6da8c4] shadow-sm hover:bg-sky-50"
+                title="Toggle music"
+              >
+                {musicEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+                {musicEnabled ? "music on" : "music off"}
+              </IconButton>
+
+              <IconButton
+                onClick={() => {
+                  setSoundEnabled((prev) => !prev);
+                }}
+                className="border-sky-200 bg-white text-[#6da8c4] shadow-sm hover:bg-sky-50"
+                title="Toggle bark sound"
+              >
+                {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+                {soundEnabled ? "bark on" : "bark off"}
+              </IconButton>
+            </div>
+
+            <div className="rounded-[24px] border border-sky-100 bg-white/90 p-4 shadow-sm">
+              <div className="mb-2 text-xs tracking-[0.2em] text-sky-300 lowercase">music volume ✨</div>
+              <div className="flex items-center gap-3">
+                <VolumeX className="h-4 w-4 text-sky-300" />
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={Math.round(musicVolume * 100)}
+                  onChange={(e) => {
+                    const nextVolume = Number(e.target.value) / 100;
+                    setMusicVolume(nextVolume);
+                  }}
+                  className="w-full accent-[#6da8c4]"
+                />
+                <Volume2 className="h-4 w-4 text-[#6da8c4]" />
+              </div>
+              <div className="mt-2 text-sm text-zinc-500 lowercase">
+                {Math.round(musicVolume * 100)}%
+              </div>
             </div>
 
             <div className="rounded-[24px] border border-sky-100 bg-white/90 p-4 shadow-sm text-sm text-zinc-600">
               <div className="mb-2 font-medium text-[#6da8c4] lowercase">goal 💗</div>
               <p className="lowercase">
-                help tobi gather yummy bones and dog food! be careful not to bonk the walls or your own tail! 🐾✨
+                help tobi grow extra fluffy by eating bones and dog food. avoid bumping into the walls or yourself! ✨💗
               </p>
             </div>
           </div>
@@ -810,7 +812,7 @@ export default function App() {
                   </span>
                 ) : isRunning ? (
                   <span className="lowercase">
-                    tobi is zooming ✨ he gets a little faster every time you collect a treat 💗
+                    tobi is zooming ✨ it gets a little faster every time you collect a treat 💗
                   </span>
                 ) : (
                   <span className="lowercase">press start, swipe, or hit space for a cute little chaos run ✨💗</span>
