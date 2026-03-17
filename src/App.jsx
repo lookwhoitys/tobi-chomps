@@ -3,17 +3,9 @@ import { motion } from "framer-motion";
 import { Pause, Play, RotateCcw } from "lucide-react";
 
 const GRID_SIZE = 18;
-const CELL_IMAGE_SIZE = "142%";
+const CELL_IMAGE_SIZE = "156%";
+const CELL_IMAGE_OFFSET = "-12%";
 const ASSET_BASE = import.meta.env.BASE_URL;
-
-function getHeadSprite(dir) {
-  if (!dir) return `${ASSET_BASE}snake-head-right.png`;
-  if (dir.x === 1 && dir.y === 0) return `${ASSET_BASE}snake-head-right.png`;
-  if (dir.x === -1 && dir.y === 0) return `${ASSET_BASE}snake-head-left.png`;
-  if (dir.x === 0 && dir.y === -1) return `${ASSET_BASE}snake-head-up.png`;
-  if (dir.x === 0 && dir.y === 1) return `${ASSET_BASE}snake-head-down.png`;
-  return `${ASSET_BASE}snake-head-right.png`;
-}
 
 const INITIAL_SNAKE = [
   { x: 8, y: 9 },
@@ -23,6 +15,15 @@ const INITIAL_SNAKE = [
 const INITIAL_DIRECTION = { x: 1, y: 0 };
 const BASE_SPEED = 150;
 const MIN_SPEED = 68;
+
+function getHeadSprite(dir) {
+  if (!dir) return `${ASSET_BASE}snake-head-right.png`;
+  if (dir.x === 1 && dir.y === 0) return `${ASSET_BASE}snake-head-right.png`;
+  if (dir.x === -1 && dir.y === 0) return `${ASSET_BASE}snake-head-left.png`;
+  if (dir.x === 0 && dir.y === -1) return `${ASSET_BASE}snake-head-up.png`;
+  if (dir.x === 0 && dir.y === 1) return `${ASSET_BASE}snake-head-down.png`;
+  return `${ASSET_BASE}snake-head-right.png`;
+}
 
 function randomFoodPosition(snake) {
   while (true) {
@@ -102,6 +103,52 @@ function getBodyAngle(prev, next) {
   return 0;
 }
 
+function isMobileDevice() {
+  return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+}
+
+function playChompSound() {
+  try {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) return;
+
+    const ctx = new AudioContextClass();
+    const now = ctx.currentTime;
+
+    const osc1 = ctx.createOscillator();
+    const osc2 = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc1.type = "triangle";
+    osc2.type = "square";
+
+    osc1.frequency.setValueAtTime(520, now);
+    osc1.frequency.exponentialRampToValueAtTime(220, now + 0.08);
+
+    osc2.frequency.setValueAtTime(760, now);
+    osc2.frequency.exponentialRampToValueAtTime(320, now + 0.08);
+
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(0.08, now + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.12);
+
+    osc1.connect(gain);
+    osc2.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc1.start(now);
+    osc2.start(now);
+    osc1.stop(now + 0.12);
+    osc2.stop(now + 0.12);
+
+    window.setTimeout(() => {
+      ctx.close().catch(() => {});
+    }, 180);
+  } catch {
+    // ignore sound errors
+  }
+}
+
 export default function App() {
   const [snake, setSnake] = useState(INITIAL_SNAKE);
   const [direction, setDirection] = useState(INITIAL_DIRECTION);
@@ -116,6 +163,33 @@ export default function App() {
   const [eatBursts, setEatBursts] = useState([]);
   const [chomping, setChomping] = useState(false);
   const [justAte, setJustAte] = useState(false);
+  const boardRef = useRef(null);
+
+  const enterFullscreenIfMobile = useCallback(() => {
+    if (!isMobileDevice()) return;
+    const el = boardRef.current;
+    if (!el) return;
+    if (document.fullscreenElement) return;
+
+    if (el.requestFullscreen) {
+      el.requestFullscreen().catch(() => {});
+    }
+  }, []);
+
+  const startFreshGame = useCallback((newDir = INITIAL_DIRECTION) => {
+    const freshSnake = INITIAL_SNAKE;
+    setSnake(freshSnake);
+    setDirection(newDir);
+    nextDirectionRef.current = newDir;
+    setFood(randomFoodPosition(freshSnake));
+    setIsGameOver(false);
+    setScore(0);
+    setPawPrints([]);
+    setEatBursts([]);
+    setJustAte(false);
+    setChomping(false);
+    setIsRunning(true);
+  }, []);
 
   useEffect(() => {
     const saved = window.localStorage.getItem("pom-pom-snake-high-score");
@@ -179,15 +253,22 @@ export default function App() {
       if (e.key === "ArrowDown") changeDirection({ x: 0, y: 1 });
       if (e.key === "ArrowLeft") changeDirection({ x: -1, y: 0 });
       if (e.key === "ArrowRight") changeDirection({ x: 1, y: 0 });
+
       if (e.key === " ") {
-        if (isGameOver) return;
-        setIsRunning(true);
+        if (isGameOver) {
+          startFreshGame(nextDirectionRef.current || INITIAL_DIRECTION);
+          return;
+        }
+
+        if (!isRunning) {
+          setIsRunning(true);
+        }
       }
     };
 
     window.addEventListener("keydown", handleKeyDown, { passive: false });
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [changeDirection, isGameOver]);
+  }, [changeDirection, isGameOver, isRunning, startFreshGame]);
 
   useEffect(() => {
     if (!isRunning || isGameOver) return;
@@ -229,6 +310,7 @@ export default function App() {
           setScore(nextScore);
           setHighScore((prev) => Math.max(prev, nextScore));
           createEatBurst(food);
+          playChompSound();
           setFood(randomFoodPosition(nextSnake));
           return nextSnake;
         }
@@ -268,12 +350,14 @@ export default function App() {
   const tailAngle = useMemo(() => getTailAngle(snake), [snake]);
 
   const handleSwipeStart = (e) => {
+    enterFullscreenIfMobile();
     const touch = e.touches[0];
     setTouchStart({ x: touch.clientX, y: touch.clientY });
   };
 
   const handleSwipeEnd = (e) => {
     if (!touchStart) return;
+
     const touch = e.changedTouches[0];
     const dx = touch.clientX - touchStart.x;
     const dy = touch.clientY - touchStart.y;
@@ -283,13 +367,19 @@ export default function App() {
 
     if (Math.max(absX, absY) < threshold) return;
 
+    let newDir;
     if (absX > absY) {
-      if (dx > 0) changeDirection({ x: 1, y: 0 });
-      else changeDirection({ x: -1, y: 0 });
+      newDir = dx > 0 ? { x: 1, y: 0 } : { x: -1, y: 0 };
     } else {
-      if (dy > 0) changeDirection({ x: 0, y: 1 });
-      else changeDirection({ x: 0, y: -1 });
+      newDir = dy > 0 ? { x: 0, y: 1 } : { x: 0, y: -1 };
     }
+
+    if (isGameOver || !isRunning) {
+      startFreshGame(newDir);
+      return;
+    }
+
+    changeDirection(newDir);
   };
 
   const bounceBody = justAte ? { scale: [1, 1.1, 1] } : { scale: [1, 1.02, 1] };
@@ -336,7 +426,14 @@ export default function App() {
 
             <div className="flex flex-wrap gap-3">
               <IconButton
-                onClick={() => !isGameOver && setIsRunning((prev) => !prev)}
+                onClick={() => {
+                  enterFullscreenIfMobile();
+                  if (isGameOver) {
+                    startFreshGame(nextDirectionRef.current || INITIAL_DIRECTION);
+                    return;
+                  }
+                  setIsRunning((prev) => !prev);
+                }}
                 className="border-sky-400 bg-[#bbe0f2] text-white shadow-md hover:bg-[#a9d6ea]"
                 title="start or pause"
               >
@@ -357,7 +454,7 @@ export default function App() {
               <div className="rounded-[24px] border border-sky-100 bg-white/90 p-4 shadow-sm">
                 <div className="mb-2 font-medium text-[#6da8c4] lowercase">how to play ✨</div>
                 <p className="lowercase">
-                  use arrow keys on desktop. on mobile, swipe the board or tap the arrow buttons 💗
+                  use arrow keys on desktop. on mobile, swipe the board or tap the arrow buttons
                 </p>
               </div>
               <div className="rounded-[24px] border border-sky-100 bg-white/90 p-4 shadow-sm">
@@ -374,7 +471,8 @@ export default function App() {
           <div className="overflow-hidden rounded-[32px] border border-white/70 bg-white/80 shadow-[0_20px_80px_rgba(160,210,255,0.25)] backdrop-blur">
             <div className="p-4 sm:p-6">
               <div
-                className="relative mx-auto aspect-square w-full max-w-[640px] select-none overflow-hidden rounded-[42px] border-[4px] border-white bg-[#BEBEBE] p-4 shadow-[inset_0_0_0_1px_rgba(180,220,255,0.55),0_20px_40px_rgba(255,255,255,0.25)] touch-none sm:p-5"
+                ref={boardRef}
+                className="relative mx-auto aspect-square w-full max-w-none select-none overflow-hidden rounded-[42px] border-[4px] border-white bg-[#BEBEBE] p-4 shadow-[inset_0_0_0_1px_rgba(180,220,255,0.55),0_20px_40px_rgba(255,255,255,0.25)] touch-none md:max-w-[640px] sm:p-5"
                 onTouchStart={handleSwipeStart}
                 onTouchEnd={handleSwipeEnd}
               >
@@ -479,7 +577,7 @@ export default function App() {
                           transition={itemSpring}
                           initial={{ scale: 0.88, opacity: 0.8 }}
                           animate={{ scale: [1, 1.05, 1], opacity: 1 }}
-                          className="relative rounded-[10px] overflow-visible z-20"
+                          className="relative z-20 overflow-visible rounded-[10px]"
                         >
                           <motion.div
                             animate={chomping ? { y: [0, -1, 0], scale: [1, 0.9, 1.06, 1] } : { y: [0, -1.5, 0] }}
@@ -518,8 +616,8 @@ export default function App() {
                               style={{
                                 width: CELL_IMAGE_SIZE,
                                 height: CELL_IMAGE_SIZE,
-                                marginLeft: "-7%",
-                                marginTop: "-7%",
+                                marginLeft: CELL_IMAGE_OFFSET,
+                                marginTop: CELL_IMAGE_OFFSET,
                               }}
                               animate={{ rotate: [`${tailAngle - 5}deg`, `${tailAngle + 5}deg`, `${tailAngle - 5}deg`] }}
                               transition={{ duration: 1.1, repeat: Infinity, ease: "easeInOut" }}
@@ -542,8 +640,8 @@ export default function App() {
                             style={{
                               width: CELL_IMAGE_SIZE,
                               height: CELL_IMAGE_SIZE,
-                              marginLeft: "-7%",
-                              marginTop: "-7%",
+                              marginLeft: CELL_IMAGE_OFFSET,
+                              marginTop: CELL_IMAGE_OFFSET,
                               rotate: `${bodyAngle}deg`,
                               transformOrigin: "center center",
                             }}
@@ -607,14 +705,14 @@ export default function App() {
               <div className="mt-4 min-h-7 text-center text-sm text-zinc-500">
                 {isGameOver ? (
                   <span className="font-medium text-red-400 lowercase">
-                    (• ε •) tobi bumped into something! reset and try again. 💗
+                    (• ε •) tobi bumped into something! swipe or press space to try again. 💗
                   </span>
                 ) : isRunning ? (
                   <span className="lowercase">
-                    tobi is zooming ✨ he gets a little faster every time you collect a treat 💗
+                    tobi is zooming ✨ it gets a little faster every time you collect a treat 💗
                   </span>
                 ) : (
-                  <span className="lowercase">press start for a cute little chaos run ✨💗</span>
+                  <span className="lowercase">press start, swipe, or hit space for a cute little chaos run ✨💗</span>
                 )}
               </div>
             </div>
