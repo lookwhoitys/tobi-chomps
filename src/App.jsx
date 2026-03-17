@@ -3,12 +3,6 @@ import { motion } from "framer-motion";
 import { Pause, Play, RotateCcw } from "lucide-react";
 
 const GRID_SIZE = 18;
-const CELL_IMAGE_SIZE = "178%";
-const CELL_IMAGE_OFFSET = "-39%";
-const HEAD_IMAGE_SIZE = "142%";
-const HEAD_IMAGE_OFFSET = "0%";
-const TAIL_IMAGE_SIZE = "172%";
-const TAIL_IMAGE_OFFSET = "-34%";
 const ASSET_BASE = import.meta.env.BASE_URL;
 
 let sharedAudioContext = null;
@@ -693,8 +687,8 @@ export default function App() {
                               alt="tobi"
                               className="object-contain drop-shadow-[0_2px_4px_rgba(255,255,255,0.35)]"
                               style={{
-                                width: HEAD_IMAGE_SIZE,
-                                height: HEAD_IMAGE_SIZE,
+                                width: "100%",
+                                height: "100%",
                               }}
                             />
                           </motion.div>
@@ -721,10 +715,8 @@ export default function App() {
                               alt="tail"
                               className="object-contain"
                               style={{
-                                width: TAIL_IMAGE_SIZE,
-                                height: TAIL_IMAGE_SIZE,
-                                marginLeft: TAIL_IMAGE_OFFSET,
-                                marginTop: TAIL_IMAGE_OFFSET,
+                                width: "100%",
+                                height: "100%",
                               }}
                               animate={{ rotate: [`${tailAngle - 4}deg`, `${tailAngle + 4}deg`, `${tailAngle - 4}deg`] }}
                               transition={{ duration: 1.1, repeat: Infinity, ease: "easeInOut" }}
@@ -745,10 +737,8 @@ export default function App() {
                             alt="body"
                             className="object-contain"
                             style={{
-                              width: CELL_IMAGE_SIZE,
-                              height: CELL_IMAGE_SIZE,
-                              marginLeft: CELL_IMAGE_OFFSET,
-                              marginTop: CELL_IMAGE_OFFSET,
+                              width: "100%",
+                              height: "100%",
                               rotate: `${bodyAngle}deg`,
                               transformOrigin: "center center",
                             }}
