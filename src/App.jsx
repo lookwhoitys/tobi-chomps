@@ -3,12 +3,12 @@ import { motion } from "framer-motion";
 import { Pause, Play, RotateCcw } from "lucide-react";
 
 const GRID_SIZE = 18;
-const CELL_IMAGE_SIZE = "178%";
-const CELL_IMAGE_OFFSET = "-39%";
-const HEAD_IMAGE_SIZE = "150%";
-const HEAD_IMAGE_OFFSET = "-14%";
-const TAIL_IMAGE_SIZE = "172%";
-const TAIL_IMAGE_OFFSET = "-34%";
+const CELL_IMAGE_SIZE = "196%";
+const CELL_IMAGE_OFFSET = "-48%";
+const HEAD_IMAGE_SIZE = "156%";
+const HEAD_IMAGE_OFFSET = "-18%";
+const TAIL_IMAGE_SIZE = "186%";
+const TAIL_IMAGE_OFFSET = "-42%";
 const ASSET_BASE = import.meta.env.BASE_URL;
 
 let sharedAudioContext = null;
@@ -704,62 +704,72 @@ export default function App() {
                       );
                     }
 
-                    if (type === "bodyA" || type === "bodyB") {
-                      const isTail = snakeIndex === snake.length - 1;
-                      const prevSegment = snake[snakeIndex - 1];
-                      const nextSegment = snake[snakeIndex + 1];
-                      const bodyAngle = getBodyAngle(prevSegment, nextSegment);
+if (type === "bodyA" || type === "bodyB") {
+  const isTail = snakeIndex === snake.length - 1;
+  const isNeck = snakeIndex === 1;
+  const prevSegment = snake[snakeIndex - 1];
+  const nextSegment = snake[snakeIndex + 1];
+  const bodyAngle = getBodyAngle(prevSegment, nextSegment);
 
-                      if (isTail) {
-                        return (
-                          <motion.div
-                            key={index}
-                            layout
-                            transition={itemSpring}
-                            className="flex items-center justify-center overflow-visible"
-                          >
-                            <motion.img
-                              src={`${ASSET_BASE}snake-tail.png`}
-                              alt="tail"
-                              className="object-contain"
-                              style={{
-                                width: TAIL_IMAGE_SIZE,
-                                height: TAIL_IMAGE_SIZE,
-                                marginLeft: TAIL_IMAGE_OFFSET,
-                                marginTop: TAIL_IMAGE_OFFSET,
-                              }}
-                              animate={{ rotate: [`${tailAngle - 4}deg`, `${tailAngle + 4}deg`, `${tailAngle - 4}deg`] }}
-                              transition={{ duration: 1.1, repeat: Infinity, ease: "easeInOut" }}
-                            />
-                          </motion.div>
-                        );
-                      }
+  if (isTail) {
+    return (
+      <motion.div
+        key={index}
+        layout
+        transition={itemSpring}
+        className="flex items-center justify-center overflow-visible"
+      >
+        <motion.img
+          src={`${ASSET_BASE}snake-tail.png`}
+          alt="tail"
+          className="object-contain"
+          style={{
+            width: TAIL_IMAGE_SIZE,
+            height: TAIL_IMAGE_SIZE,
+            marginLeft: TAIL_IMAGE_OFFSET,
+            marginTop: TAIL_IMAGE_OFFSET,
+          }}
+          animate={{ rotate: [`${tailAngle - 4}deg`, `${tailAngle + 4}deg`, `${tailAngle - 4}deg`] }}
+          transition={{ duration: 1.1, repeat: Infinity, ease: "easeInOut" }}
+        />
+      </motion.div>
+    );
+  }
 
-                      return (
-                        <motion.div
-                          key={index}
-                          layout
-                          transition={itemSpring}
-                          className="flex items-center justify-center overflow-visible"
-                        >
-                          <motion.img
-                            src={`${ASSET_BASE}snake-body-seamless.png`}
-                            alt="body"
-                            className="object-contain"
-                            style={{
-                              width: CELL_IMAGE_SIZE,
-                              height: CELL_IMAGE_SIZE,
-                              marginLeft: CELL_IMAGE_OFFSET,
-                              marginTop: CELL_IMAGE_OFFSET,
-                              rotate: `${bodyAngle}deg`,
-                              transformOrigin: "center center",
-                            }}
-                            animate={bounceBody}
-                            transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut", delay: snakeIndex * 0.02 }}
-                          />
-                        </motion.div>
-                      );
-                    }
+  return (
+    <motion.div
+      key={index}
+      layout
+      transition={itemSpring}
+      className="flex items-center justify-center overflow-visible"
+    >
+      <motion.img
+        src={
+          isNeck
+            ? `${ASSET_BASE}snake-body-start.png`
+            : `${ASSET_BASE}snake-body-seamless.png`
+        }
+        alt={isNeck ? "body start" : "body"}
+        className="object-contain"
+        style={{
+          width: isNeck ? "205%" : CELL_IMAGE_SIZE,
+          height: isNeck ? "205%" : CELL_IMAGE_SIZE,
+          marginLeft: isNeck ? "-52%" : CELL_IMAGE_OFFSET,
+          marginTop: isNeck ? "-52%" : CELL_IMAGE_OFFSET,
+          rotate: `${bodyAngle}deg`,
+          transformOrigin: "center center",
+        }}
+        animate={bounceBody}
+        transition={{
+          duration: 1.2,
+          repeat: Infinity,
+          ease: "easeInOut",
+          delay: snakeIndex * 0.02,
+        }}
+      />
+    </motion.div>
+  );
+}
 
                     if (type === "bone") {
                       return (
