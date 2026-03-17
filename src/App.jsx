@@ -810,7 +810,7 @@ export default function App() {
                   </span>
                 ) : isRunning ? (
                   <span className="lowercase">
-                    tobi is zooming ✨ it gets a little faster every time you collect a treat 💗
+                    tobi is zooming ✨ he gets a little faster every time you collect a treat 💗
                   </span>
                 ) : (
                   <span className="lowercase">press start, swipe, or hit space for a cute little chaos run ✨💗</span>
