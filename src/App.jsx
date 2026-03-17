@@ -501,7 +501,7 @@ export default function App() {
               <div className="flex h-16 w-16 items-center justify-center rounded-full border border-sky-200 bg-white/90 shadow-sm">
                 <div className="relative h-12 w-12 overflow-hidden rounded-full bg-white">
                   <img
-                    src={`${ASSET_BASE}snake-head-down.png`}
+                    src={`${ASSET_BASE}snake-head.png`}
                     alt="tobi"
                     className="h-full w-full object-cover"
                   />
