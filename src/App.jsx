@@ -81,14 +81,55 @@ function getTailAngle(snake) {
   return directionToAngle(getDirection(last, beforeLast));
 }
 
-function getBodyAngle(prev, next) {
-  if (!prev || !next) return 0;
-  if (prev.x === next.x) return 90;
-  return 0;
-}
-
 function isMobileDevice() {
   return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+}
+
+function getBodySpriteInfo(prev, current, next) {
+  if (!prev || !current || !next) {
+    return {
+      sprite: `${ASSET_BASE}snake-body-seamless.png`,
+      rotation: 0,
+    };
+  }
+
+  const toPrev = {
+    x: prev.x - current.x,
+    y: prev.y - current.y,
+  };
+
+  const toNext = {
+    x: next.x - current.x,
+    y: next.y - current.y,
+  };
+
+  const isStraight = toPrev.x === toNext.x || toPrev.y === toNext.y;
+
+  if (isStraight) {
+    const rotation = toPrev.x === 0 ? 90 : 0;
+    return {
+      sprite: `${ASSET_BASE}snake-body-seamless.png`,
+      rotation,
+    };
+  }
+
+  const hasUp = toPrev.y === -1 || toNext.y === -1;
+  const hasRight = toPrev.x === 1 || toNext.x === 1;
+  const hasDown = toPrev.y === 1 || toNext.y === 1;
+  const hasLeft = toPrev.x === -1 || toNext.x === -1;
+
+  let rotation = 0;
+
+  // Base turn.png = connects UP + RIGHT
+  if (hasUp && hasRight) rotation = 0;
+  else if (hasRight && hasDown) rotation = 90;
+  else if (hasDown && hasLeft) rotation = 180;
+  else if (hasLeft && hasUp) rotation = 270;
+
+  return {
+    sprite: `${ASSET_BASE}turn.png`,
+    rotation,
+  };
 }
 
 export default function App() {
@@ -454,7 +495,7 @@ export default function App() {
               <div className="flex h-16 w-16 items-center justify-center rounded-full border border-sky-200 bg-white/90 shadow-sm">
                 <div className="relative h-12 w-12 overflow-hidden rounded-full bg-white">
                   <img
-                    src={`${ASSET_BASE}icon.png`}
+                    src={`${ASSET_BASE}snake-head-down.png`}
                     alt="tobi"
                     className="h-full w-full object-cover"
                   />
@@ -685,7 +726,6 @@ export default function App() {
                       const isTail = snakeIndex === snake.length - 1;
                       const prevSegment = snake[snakeIndex - 1];
                       const nextSegment = snake[snakeIndex + 1];
-                      const bodyAngle = getBodyAngle(prevSegment, nextSegment);
 
                       if (isTail) {
                         return (
@@ -710,6 +750,8 @@ export default function App() {
                         );
                       }
 
+                      const bodySpriteInfo = getBodySpriteInfo(prevSegment, snake[snakeIndex], nextSegment);
+
                       return (
                         <motion.div
                           key={index}
@@ -718,17 +760,22 @@ export default function App() {
                           className="flex items-center justify-center overflow-visible"
                         >
                           <motion.img
-                            src={`${ASSET_BASE}snake-body-seamless.png`}
+                            src={bodySpriteInfo.sprite}
                             alt="body"
                             className="object-contain"
                             style={{
                               width: "100%",
                               height: "100%",
-                              rotate: `${bodyAngle}deg`,
+                              rotate: `${bodySpriteInfo.rotation}deg`,
                               transformOrigin: "center center",
                             }}
                             animate={bounceBody}
-                            transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut", delay: snakeIndex * 0.02 }}
+                            transition={{
+                              duration: 1.2,
+                              repeat: Infinity,
+                              ease: "easeInOut",
+                              delay: snakeIndex * 0.02,
+                            }}
                           />
                         </motion.div>
                       );
