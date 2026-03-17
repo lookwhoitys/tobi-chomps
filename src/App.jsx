@@ -764,8 +764,8 @@ export default function App() {
                             alt="body"
                             className="object-contain"
                             style={{
-                              width: "100%",
-                              height: "100%",
+                              width: bodySpriteInfo.sprite.includes("turn.png") ? "112%" : "100%",
+                              height: bodySpriteInfo.sprite.includes("turn.png") ? "112%" : "100%",
                               rotate: `${bodySpriteInfo.rotation}deg`,
                               transformOrigin: "center center",
                             }}
