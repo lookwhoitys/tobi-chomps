@@ -3,9 +3,15 @@ import { motion } from "framer-motion";
 import { Pause, Play, RotateCcw } from "lucide-react";
 
 const GRID_SIZE = 18;
-const CELL_IMAGE_SIZE = "156%";
-const CELL_IMAGE_OFFSET = "-12%";
+const CELL_IMAGE_SIZE = "178%";
+const CELL_IMAGE_OFFSET = "-39%";
+const HEAD_IMAGE_SIZE = "150%";
+const HEAD_IMAGE_OFFSET = "-14%";
+const TAIL_IMAGE_SIZE = "172%";
+const TAIL_IMAGE_OFFSET = "-34%";
 const ASSET_BASE = import.meta.env.BASE_URL;
+
+let sharedAudioContext = null;
 
 const INITIAL_SNAKE = [
   { x: 8, y: 9 },
@@ -15,6 +21,21 @@ const INITIAL_SNAKE = [
 const INITIAL_DIRECTION = { x: 1, y: 0 };
 const BASE_SPEED = 150;
 const MIN_SPEED = 68;
+
+function getAudioContext() {
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContextClass) return null;
+
+  if (!sharedAudioContext) {
+    sharedAudioContext = new AudioContextClass();
+  }
+
+  if (sharedAudioContext.state === "suspended") {
+    sharedAudioContext.resume().catch(() => {});
+  }
+
+  return sharedAudioContext;
+}
 
 function getHeadSprite(dir) {
   if (!dir) return `${ASSET_BASE}snake-head-right.png`;
@@ -109,98 +130,78 @@ function isMobileDevice() {
 
 function playChompSound() {
   try {
-    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-    if (!AudioContextClass) return;
+    const ctx = getAudioContext();
+    if (!ctx) return;
 
-    const ctx = new AudioContextClass();
     const now = ctx.currentTime;
 
     const master = ctx.createGain();
     master.gain.setValueAtTime(0.0001, now);
-    master.gain.exponentialRampToValueAtTime(0.055, now + 0.01);
-    master.gain.exponentialRampToValueAtTime(0.0001, now + 0.32);
+    master.gain.exponentialRampToValueAtTime(0.12, now + 0.01);
+    master.gain.exponentialRampToValueAtTime(0.0001, now + 0.28);
     master.connect(ctx.destination);
 
-    const bark1 = ctx.createOscillator();
-    const bark2 = ctx.createOscillator();
-    const bark3 = ctx.createOscillator();
+    const barkMain = ctx.createOscillator();
+    const barkBody = ctx.createOscillator();
+    const barkAir = ctx.createBufferSource();
 
-    bark1.type = "sawtooth";
-    bark2.type = "triangle";
-    bark3.type = "sine";
+    barkMain.type = "sawtooth";
+    barkBody.type = "triangle";
 
-    bark1.frequency.setValueAtTime(520, now);
-    bark1.frequency.exponentialRampToValueAtTime(240, now + 0.07);
+    barkMain.frequency.setValueAtTime(680, now);
+    barkMain.frequency.exponentialRampToValueAtTime(260, now + 0.06);
 
-    bark2.frequency.setValueAtTime(760, now);
-    bark2.frequency.exponentialRampToValueAtTime(310, now + 0.06);
+    barkBody.frequency.setValueAtTime(420, now);
+    barkBody.frequency.exponentialRampToValueAtTime(170, now + 0.08);
 
-    bark3.frequency.setValueAtTime(420, now);
-    bark3.frequency.exponentialRampToValueAtTime(180, now + 0.08);
+    const mainGain = ctx.createGain();
+    const bodyGain = ctx.createGain();
 
-    const barkGain1 = ctx.createGain();
-    const barkGain2 = ctx.createGain();
-    const barkGain3 = ctx.createGain();
+    mainGain.gain.setValueAtTime(0.001, now);
+    mainGain.gain.exponentialRampToValueAtTime(0.08, now + 0.008);
+    mainGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.09);
 
-    barkGain1.gain.setValueAtTime(0.001, now);
-    barkGain1.gain.exponentialRampToValueAtTime(0.045, now + 0.008);
-    barkGain1.gain.exponentialRampToValueAtTime(0.0001, now + 0.09);
+    bodyGain.gain.setValueAtTime(0.001, now);
+    bodyGain.gain.exponentialRampToValueAtTime(0.05, now + 0.012);
+    bodyGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.11);
 
-    barkGain2.gain.setValueAtTime(0.001, now + 0.004);
-    barkGain2.gain.exponentialRampToValueAtTime(0.03, now + 0.012);
-    barkGain2.gain.exponentialRampToValueAtTime(0.0001, now + 0.08);
+    const noiseLength = Math.floor(ctx.sampleRate * 0.08);
+    const noiseBuffer = ctx.createBuffer(1, noiseLength, ctx.sampleRate);
+    const data = noiseBuffer.getChannelData(0);
 
-    barkGain3.gain.setValueAtTime(0.001, now);
-    barkGain3.gain.exponentialRampToValueAtTime(0.018, now + 0.012);
-    barkGain3.gain.exponentialRampToValueAtTime(0.0001, now + 0.11);
-
-    const noise = ctx.createBufferSource();
-    const noiseGain = ctx.createGain();
-    const filter = ctx.createBiquadFilter();
-
-    const bufferSize = Math.floor(ctx.sampleRate * 0.12);
-    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-    const data = buffer.getChannelData(0);
-
-    for (let i = 0; i < bufferSize; i += 1) {
-      const envelope = 1 - i / bufferSize;
-      data[i] = (Math.random() * 2 - 1) * envelope * 0.7;
+    for (let i = 0; i < noiseLength; i += 1) {
+      const env = 1 - i / noiseLength;
+      data[i] = (Math.random() * 2 - 1) * env;
     }
 
-    noise.buffer = buffer;
-    filter.type = "bandpass";
-    filter.frequency.setValueAtTime(900, now);
-    filter.Q.setValueAtTime(0.7, now);
+    barkAir.buffer = noiseBuffer;
 
+    const noiseFilter = ctx.createBiquadFilter();
+    noiseFilter.type = "bandpass";
+    noiseFilter.frequency.setValueAtTime(1200, now);
+    noiseFilter.Q.setValueAtTime(0.8, now);
+
+    const noiseGain = ctx.createGain();
     noiseGain.gain.setValueAtTime(0.001, now);
-    noiseGain.gain.exponentialRampToValueAtTime(0.012, now + 0.005);
-    noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.06);
+    noiseGain.gain.exponentialRampToValueAtTime(0.02, now + 0.004);
+    noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.05);
 
-    bark1.connect(barkGain1);
-    bark2.connect(barkGain2);
-    bark3.connect(barkGain3);
+    barkMain.connect(mainGain);
+    barkBody.connect(bodyGain);
+    mainGain.connect(master);
+    bodyGain.connect(master);
 
-    barkGain1.connect(master);
-    barkGain2.connect(master);
-    barkGain3.connect(master);
-
-    noise.connect(filter);
-    filter.connect(noiseGain);
+    barkAir.connect(noiseFilter);
+    noiseFilter.connect(noiseGain);
     noiseGain.connect(master);
 
-    bark1.start(now);
-    bark2.start(now + 0.002);
-    bark3.start(now);
-    noise.start(now);
+    barkMain.start(now);
+    barkBody.start(now + 0.002);
+    barkAir.start(now);
 
-    bark1.stop(now + 0.1);
-    bark2.stop(now + 0.09);
-    bark3.stop(now + 0.11);
-    noise.stop(now + 0.06);
-
-    window.setTimeout(() => {
-      ctx.close().catch(() => {});
-    }, 400);
+    barkMain.stop(now + 0.1);
+    barkBody.stop(now + 0.12);
+    barkAir.stop(now + 0.05);
   } catch {
     // ignore sound errors
   }
@@ -344,6 +345,7 @@ export default function App() {
       if (e.key === "ArrowRight") changeDirection({ x: 1, y: 0 });
 
       if (e.key === " ") {
+        getAudioContext();
         if (isGameOver) {
           startFreshGame(nextDirectionRef.current || INITIAL_DIRECTION);
           return;
@@ -444,6 +446,7 @@ export default function App() {
   const tailAngle = useMemo(() => getTailAngle(snake), [snake]);
 
   const handleSwipeStart = (e) => {
+    getAudioContext();
     enterFullscreenIfMobile();
     const touch = e.touches[0];
     setTouchStart({ x: touch.clientX, y: touch.clientY });
@@ -476,7 +479,7 @@ export default function App() {
     changeDirection(newDir);
   };
 
-  const bounceBody = justAte ? { scale: [1, 1.1, 1] } : { scale: [1, 1.02, 1] };
+  const bounceBody = justAte ? { scale: [1, 1.08, 1] } : { scale: [1, 1.015, 1] };
 
   const itemSpring = {
     type: "spring",
@@ -522,6 +525,7 @@ export default function App() {
             <div className="flex flex-wrap gap-3">
               <IconButton
                 onClick={() => {
+                  getAudioContext();
                   enterFullscreenIfMobile();
 
                   if (isGameOver) {
@@ -676,7 +680,7 @@ export default function App() {
                           transition={itemSpring}
                           initial={{ scale: 0.88, opacity: 0.8 }}
                           animate={{ scale: [1, 1.05, 1], opacity: 1 }}
-                          className="relative z-20 overflow-visible rounded-[10px]"
+                          className="relative z-20 overflow-visible"
                         >
                           <motion.div
                             animate={chomping ? { y: [0, -1, 0], scale: [1, 0.92, 1.05, 1] } : { y: [0, -1.5, 0] }}
@@ -687,7 +691,13 @@ export default function App() {
                             <img
                               src={headSprite}
                               alt="tobi"
-                              className="h-[128%] w-[128%] object-contain drop-shadow-[0_2px_4px_rgba(255,255,255,0.35)]"
+                              className="object-contain drop-shadow-[0_2px_4px_rgba(255,255,255,0.35)]"
+                              style={{
+                                width: HEAD_IMAGE_SIZE,
+                                height: HEAD_IMAGE_SIZE,
+                                marginLeft: HEAD_IMAGE_OFFSET,
+                                marginTop: HEAD_IMAGE_OFFSET,
+                              }}
                             />
                           </motion.div>
                         </motion.div>
@@ -706,19 +716,19 @@ export default function App() {
                             key={index}
                             layout
                             transition={itemSpring}
-                            className="flex items-center justify-center"
+                            className="flex items-center justify-center overflow-visible"
                           >
                             <motion.img
                               src={`${ASSET_BASE}snake-tail.png`}
                               alt="tail"
                               className="object-contain"
                               style={{
-                                width: CELL_IMAGE_SIZE,
-                                height: CELL_IMAGE_SIZE,
-                                marginLeft: CELL_IMAGE_OFFSET,
-                                marginTop: CELL_IMAGE_OFFSET,
+                                width: TAIL_IMAGE_SIZE,
+                                height: TAIL_IMAGE_SIZE,
+                                marginLeft: TAIL_IMAGE_OFFSET,
+                                marginTop: TAIL_IMAGE_OFFSET,
                               }}
-                              animate={{ rotate: [`${tailAngle - 5}deg`, `${tailAngle + 5}deg`, `${tailAngle - 5}deg`] }}
+                              animate={{ rotate: [`${tailAngle - 4}deg`, `${tailAngle + 4}deg`, `${tailAngle - 4}deg`] }}
                               transition={{ duration: 1.1, repeat: Infinity, ease: "easeInOut" }}
                             />
                           </motion.div>
@@ -794,7 +804,7 @@ export default function App() {
                         key={index}
                         animate={{ scale: 1, opacity: 1 }}
                         transition={{ duration: 0.22, ease: "easeOut" }}
-                        className="rounded-[14px] border border-white/25 bg-[rgba(255,255,255,0.08)] shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]"
+                        className="bg-transparent"
                       />
                     );
                   })}
