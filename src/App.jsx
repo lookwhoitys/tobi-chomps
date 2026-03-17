@@ -61,20 +61,6 @@ function StatCard({ label, value, valueClass = "text-[#6da8c4]" }) {
   );
 }
 
-function FloatingCloud({ className = "", delay = 0 }) {
-  return (
-    <motion.div
-      animate={{ x: [0, 8, 0], y: [0, -3, 0] }}
-      transition={{ duration: 8, repeat: Infinity, ease: "easeInOut", delay }}
-      className={`absolute h-8 w-16 rounded-full bg-white/70 blur-[1px] ${className}`}
-    >
-      <div className="absolute -left-1 bottom-0 h-7 w-7 rounded-full bg-white/85" />
-      <div className="absolute left-4 -top-2 h-8 w-8 rounded-full bg-white/85" />
-      <div className="absolute right-2 top-0 h-6 w-6 rounded-full bg-white/85" />
-    </motion.div>
-  );
-}
-
 function directionToAngle(dir) {
   if (!dir) return 0;
   if (dir.x === 1 && dir.y === 0) return 0;
@@ -121,7 +107,7 @@ export default function App() {
   const [justAte, setJustAte] = useState(false);
   const [isMobilePlaying, setIsMobilePlaying] = useState(false);
 
-  const [musicEnabled, setMusicEnabled] = useState(false);
+  const [musicEnabled, setMusicEnabled] = useState(true);
   const [musicVolume, setMusicVolume] = useState(0.35);
   const [soundEnabled, setSoundEnabled] = useState(true);
 
@@ -230,6 +216,16 @@ export default function App() {
       music.pause();
     }
   }, [musicEnabled, musicVolume]);
+
+  useEffect(() => {
+    const music = musicRef.current;
+    if (!music) return;
+
+    music.volume = musicVolume;
+    music.play().catch(() => {
+      // autoplay may be blocked by browser until user interaction
+    });
+  }, [musicVolume]);
 
   const createPawPrint = useCallback((segment) => {
     const id = `${Date.now()}-${Math.random()}`;
@@ -433,7 +429,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#7EA3CC] p-3 text-zinc-800 sm:p-6">
-      <audio ref={musicRef} loop preload="auto">
+      <audio ref={musicRef} loop preload="auto" autoPlay>
         <source src={`${ASSET_BASE}bg-music.mp3`} type="audio/mpeg" />
       </audio>
 
@@ -567,33 +563,20 @@ export default function App() {
             <div className="p-2 sm:p-6">
               <div
                 ref={boardRef}
-                className={`relative mx-auto w-full select-none overflow-hidden border-[4px] border-white bg-[#BEBEBE] shadow-[inset_0_0_0_1px_rgba(180,220,255,0.55),0_20px_40px_rgba(255,255,255,0.25)] touch-none ${
+                className={`relative mx-auto w-full select-none overflow-hidden border-[4px] border-white shadow-[inset_0_0_0_1px_rgba(180,220,255,0.55),0_20px_40px_rgba(255,255,255,0.25)] touch-none ${
                   isMobilePlaying
                     ? "h-[100svh] rounded-none border-x-0 border-y-0 p-2"
                     : "h-[82svh] rounded-[34px] p-3 sm:aspect-square sm:h-auto sm:max-w-[640px] sm:rounded-[42px] sm:p-5"
                 }`}
+                style={{
+                  backgroundImage: `url(${ASSET_BASE}game-bg.png)`,
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
+                  backgroundRepeat: "no-repeat",
+                }}
                 onTouchStart={handleSwipeStart}
                 onTouchEnd={handleSwipeEnd}
               >
-                <motion.div
-                  animate={{ scale: [1, 1.08, 1], opacity: [0.22, 0.32, 0.22] }}
-                  transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-                  className="absolute -left-8 -top-8 h-24 w-24 rounded-full bg-sky-200/30 blur-2xl"
-                />
-                <div className="absolute left-6 top-6 h-16 w-28 rounded-full bg-white/60 blur-[1px]" />
-                <div className="absolute left-12 top-3 h-10 w-10 rounded-full bg-white/70" />
-                <div className="absolute left-24 top-8 h-12 w-12 rounded-full bg-white/70" />
-                <motion.div
-                  animate={{ scale: [1, 1.12, 1], opacity: [0.18, 0.28, 0.18] }}
-                  transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-                  className="absolute -bottom-8 -right-8 h-24 w-24 rounded-full bg-blue-200/30 blur-2xl"
-                />
-                <div className="absolute right-8 bottom-7 h-14 w-24 rounded-full bg-white/45 blur-[1px]" />
-                <div className="absolute right-4 bottom-2 h-10 w-10 rounded-full bg-white/55" />
-                <div className="absolute right-20 bottom-0 h-12 w-12 rounded-full bg-white/55" />
-                <FloatingCloud className="left-10 top-12" delay={0.2} />
-                <FloatingCloud className="right-12 top-24 scale-75" delay={1.1} />
-
                 <div className="pointer-events-none absolute inset-0 z-10">
                   {pawPrints.map((print, index) => (
                     <motion.div
