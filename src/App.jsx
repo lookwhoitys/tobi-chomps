@@ -39,28 +39,6 @@ function randomFoodPosition(snake) {
   }
 }
 
-function IconButton({ children, onClick, className = "", title }) {
-  return (
-    <button
-      type="button"
-      title={title}
-      onClick={onClick}
-      className={`inline-flex items-center justify-center gap-2 rounded-[20px] border px-4 py-3 text-sm font-semibold transition active:scale-[0.98] ${className}`}
-    >
-      {children}
-    </button>
-  );
-}
-
-function StatCard({ label, value, valueClass = "text-[#6da8c4]" }) {
-  return (
-    <div className="rounded-[24px] border border-sky-100 bg-white/90 p-4 shadow-sm">
-      <div className="text-xs tracking-[0.2em] text-sky-300 lowercase">{label} ✨</div>
-      <div className={`mt-1 text-3xl font-semibold ${valueClass}`}>{value}</div>
-    </div>
-  );
-}
-
 function getDirection(from, to) {
   return { x: from.x - to.x, y: from.y - to.y };
 }
@@ -73,9 +51,6 @@ export default function App() {
   const [isRunning, setIsRunning] = useState(false);
   const [isGameOver, setIsGameOver] = useState(false);
   const [score, setScore] = useState(0);
-  const [highScore, setHighScore] = useState(0);
-
-  const boardRef = useRef(null);
 
   const speed = useMemo(() => Math.max(MIN_SPEED, BASE_SPEED - score * 5), [score]);
 
@@ -140,7 +115,6 @@ export default function App() {
         if (hitWall || hitSelf) {
           setIsGameOver(true);
           setIsRunning(false);
-          setHighScore((prev) => Math.max(prev, score));
           return currentSnake;
         }
 
@@ -148,9 +122,7 @@ export default function App() {
         const nextSnake = [newHead, ...currentSnake];
 
         if (ateFood) {
-          const nextScore = score + 1;
-          setScore(nextScore);
-          setHighScore((prev) => Math.max(prev, nextScore));
+          setScore((s) => s + 1);
           setFood(randomFoodPosition(nextSnake));
           return nextSnake;
         }
@@ -161,7 +133,7 @@ export default function App() {
     }, speed);
 
     return () => clearInterval(interval);
-  }, [food, isGameOver, isRunning, score, speed]);
+  }, [food, isGameOver, isRunning, speed]);
 
   const getCellType = (x, y) => {
     if (snake.some((s) => s.x === x && s.y === y)) return "snake";
@@ -172,11 +144,10 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#7EA3CC] flex items-center justify-center">
       <div
-        ref={boardRef}
         className="grid"
         style={{
-          width: 600,
-          height: 600,
+          width: 620,
+          height: 620,
           gridTemplateColumns: `repeat(${GRID_SIZE}, 1fr)`,
           gridTemplateRows: `repeat(${GRID_SIZE}, 1fr)`,
           backgroundImage: `url(${ASSET_BASE}game-bg.png)`,
@@ -207,12 +178,19 @@ export default function App() {
                 <motion.div
                   animate={{ scale: [1, 1.08, 1], opacity: [0.2, 0.35, 0.2] }}
                   transition={{ duration: 1.8, repeat: Infinity }}
-                  className="absolute w-10 h-10 rounded-full bg-white/30 blur-md"
+                  className="absolute w-12 h-12 rounded-full bg-white/30 blur-md"
                 />
                 <img
                   src={`${ASSET_BASE}bone.png`}
-                  className="w-[140%] h-[140%] object-contain"
+                  className="w-[145%] h-[145%] object-contain"
                 />
+                <motion.div
+                  className="absolute text-xs"
+                  animate={{ y: [0, -4, 0], opacity: [0.3, 1, 0.3] }}
+                  transition={{ duration: 1.5, repeat: Infinity }}
+                >
+                  ✨
+                </motion.div>
               </motion.div>
             );
           }
@@ -228,12 +206,19 @@ export default function App() {
                 <motion.div
                   animate={{ scale: [1, 1.06, 1], opacity: [0.2, 0.3, 0.2] }}
                   transition={{ duration: 1.9, repeat: Infinity }}
-                  className="absolute w-10 h-10 rounded-full bg-white/25 blur-md"
+                  className="absolute w-12 h-12 rounded-full bg-white/25 blur-md"
                 />
                 <img
                   src={`${ASSET_BASE}food-bowl.png`}
-                  className="w-[138%] h-[138%] object-contain"
+                  className="w-[142%] h-[142%] object-contain"
                 />
+                <motion.div
+                  className="absolute text-xs"
+                  animate={{ y: [0, -3, 0], opacity: [0.3, 0.9, 0.3] }}
+                  transition={{ duration: 1.6, repeat: Infinity }}
+                >
+                  ✨
+                </motion.div>
               </motion.div>
             );
           }
